@@ -5,6 +5,8 @@
  */
 package it.bonex27.primawebapp.servlet;
 
+import com.google.gson.Gson;
+import it.bonex27.primewebapp.pojo.Classi;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.sql.Connection;
@@ -12,12 +14,15 @@ import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
 
 /**
  *
@@ -36,7 +41,7 @@ public class ServlethelloWorld extends HttpServlet {
      */
     protected void processRequest(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException, ClassNotFoundException, SQLException {
-        response.setContentType("text/html;charset=UTF-8");
+        response.setContentType("application/json");
         PrintWriter out = response.getWriter();
         String DRIVER = "com.mysql.cj.jdbc.Driver";
         try
@@ -48,30 +53,25 @@ public class ServlethelloWorld extends HttpServlet {
                 System.out.println(e);
             }
         try {
-         String URL_mioDB = "jdbc:mysql://localhost:3306/fi_itis_meucci";
+         String URL_mioDB = "jdbc:mysql://localhost:3306/fi_itis_meucci?serverTimezone=UTC";
          String query = "select * from class";
          
-         Connection connessione = null;
-         connessione = DriverManager.getConnection(URL_mioDB, "bonex","pietro001");
-         
+         Connection connessione = this.getConnection();
          Statement statement = connessione.createStatement();
          ResultSet resultset = statement.executeQuery(query);
-
-            out.println("<!DOCTYPE html>");
-            out.println("<html>");
-            out.println("<head>");
-            out.println("<title>Servlet ServlethelloWorld</title>");            
-            out.println("</head>");
-            out.println("<body>");
-            
-            while(resultset.next())
+         List<Classi> elencoClassi = new ArrayList();        
+        while(resultset.next())
          {
-             out.println("<h3>Classe: " + resultset.getString(3)+"</h3>");
+             String nomeClasse = resultset.getString(3);
+                Classi cl = new Classi();
+                cl.setNome(nomeClasse);
+                elencoClassi.add(cl);
          }
-            out.print("<h1>Hello World!</h1>");
-            out.println("</body>");
-            out.println("</html>");
-            
+            String ret = new Gson().toJson(elencoClassi);            
+            response.setContentType("application/json");
+            response.setCharacterEncoding("UTF-8");
+            out.print(ret);
+            out.flush();
         } 
         catch(Exception e)
         {
@@ -79,6 +79,26 @@ public class ServlethelloWorld extends HttpServlet {
         }
         finally {
             out.close();
+        }
+        
+    }
+    private Connection getConnection() {
+        try {
+            String dbDriver = "com.mysql.cj.jdbc.Driver"; 
+            String dbURL = "jdbc:mysql://localhost:3306/"; 
+            // Database name to access 
+            String dbName = "FI_ITIS_MEUCCI"; 
+            String dbUsername = "bonex"; 
+            String dbPassword = "pietro001"; 
+
+            Class.forName(dbDriver); 
+            Connection con = DriverManager.getConnection(dbURL + dbName + "?serverTimezone=UTC", 
+                                                         dbUsername,  
+                                                         dbPassword); 
+            return con;
+        } catch (Exception e) {
+             e.printStackTrace();
+            return null;
         }
     }
 
